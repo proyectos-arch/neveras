@@ -1,0 +1,185 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "type": "object",
+      "description": "Stores user-specific settings and profile information.",
+      "properties": {
+        "userId": { "type": "string", "description": "The unique ID of the user." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "leakedTestHours": { "type": "number", "description": "Hours for the initial Leaked Test." },
+        "conditioningProfiles": {
+          "type": "object",
+          "description": "User-defined conditioning profiles for each gel pack model.",
+          "properties": {
+            "s4": { "$ref": "#/entities/ConditioningProfile" },
+            "s22": { "$ref": "#/entities/ConditioningProfile" },
+            "m20": { "$ref": "#/entities/ConditioningProfile" }
+          }
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the user within the application.",
+          "enum": ["super-admin", "admin", "operator"]
+        }
+      },
+      "required": ["userId", "email", "leakedTestHours", "conditioningProfiles", "role"]
+    },
+    "ConditioningProfile": {
+      "title": "Conditioning Profile",
+      "type": "object",
+      "description": "Defines the sequence of steps for conditioning a specific gel pack model.",
+      "properties": {
+        "steps": {
+          "type": "array",
+          "items": { "$ref": "#/entities/ConditioningStep" }
+        }
+      },
+      "required": ["steps"]
+    },
+    "ConditioningStep": {
+      "title": "Conditioning Step",
+      "type": "object",
+      "description": "A single step in a conditioning profile.",
+      "properties": {
+        "chamber": { "type": "string", "description": "The name or type of the chamber for this step." },
+        "hours": { "type": "number", "description": "The duration in hours for this step." }
+      },
+      "required": ["chamber", "hours"]
+    },
+    "GelPack": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GelPack",
+      "type": "object",
+      "description": "Represents a single gel pack unit used in cold chain logistics.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the GelPack, derived from the serial number." },
+        "serial": { "type": "string", "description": "A formatted, human-readable serial number (e.g., S4 4L 0001)." },
+        "model": { 
+          "type": "string", 
+          "description": "The model of the gel pack.",
+          "enum": ["s4", "s22", "m20"]
+        },
+        "volume": {
+          "type": "number",
+          "description": "The volume of the gel pack in liters.",
+          "enum": [4, 12, 28, 56, 96]
+        },
+        "chamberType": {
+          "type": "string",
+          "description": "The designated temperature chamber for this gel pack model.",
+          "enum": ["+2+8", "+15+25", "-15-25", "FRIDGE-30"]
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status in the gel pack lifecycle.",
+          "enum": ["Por activar", "Leaked Test", "Conditioning", "Ready", "In-Use", "Inspección", "Discarded"]
+        },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp of when the gel pack was created." },
+        "ownerId": { "type": "string", "description": "The ID of the user who owns/created this gel pack." },
+        "conditioningHistory": {
+          "type": "array",
+          "items": { "$ref": "#/entities/ConditioningEvent" }
+        },
+        "lastConditioningEvent": { "$ref": "#/entities/ConditioningEvent" }
+      },
+      "required": ["id", "serial", "model", "volume", "chamberType", "status", "createdAt", "ownerId"]
+    },
+    "ConditioningEvent": {
+      "title": "Conditioning Event",
+      "type": "object",
+      "description": "Represents a single conditioning cycle for a gel pack.",
+      "properties": {
+        "startTime": { "type": "string", "format": "date-time" },
+        "endTime": { "type": "string", "format": "date-time" },
+        "chamberType": { "type": "string" }
+      },
+      "required": ["startTime", "chamberType"]
+    },
+    "GTC": {
+      "title": "GTC",
+      "type": "object",
+      "description": "Represents a reusable Global Temperature Controlled box.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique ID for the GTC box, derived from its serial." },
+        "serial": { "type": "string", "description": "The serial number of the GTC box." },
+        "volume": { "type": "number", "description": "The volume capacity of the box in liters.", "enum": [4, 12, 28, 56, 96] },
+        "status": { "type": "string", "description": "The current status of the GTC box.", "enum": ["Available", "Assembled", "In-Transit", "Returned"] },
+        "ownerId": { "type": "string", "description": "The ID of the user who owns this GTC." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "serial", "volume", "status", "ownerId", "createdAt"]
+    },
+    "Assembly": {
+      "title": "Assembly",
+      "type": "object",
+      "description": "Represents a specific assembly of a GTC box with its corresponding gel packs for a trip.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the assembly event." },
+        "gtcId": { "type": "string", "description": "The ID of the assembled GTC box." },
+        "gtcSerial": { "type": "string", "description": "The serial of the assembled GTC box." },
+        "chamberType": {
+            "type": "string",
+            "description": "The required temperature chamber for this assembly.",
+            "enum": ["+2+8", "+15+25", "-15-25", "FRIDGE-30"]
+        },
+        "gelPackIds": {
+          "type": "array",
+          "description": "An array of 6 gel pack IDs included in the assembly.",
+          "items": { "type": "string" }
+        },
+        "status": { "type": "string", "description": "The current status of the assembly.", "enum": ["Assembling", "Ready", "In-Transit", "Returned", "Aborted"] },
+        "ownerId": { "type": "string", "description": "The ID of the user who performed the assembly." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "transitStartTime": { "type": "string", "format": "date-time", "description": "Timestamp for when the assembly started its transit." },
+        "returnTime": { "type": "string", "format": "date-time", "description": "Timestamp for when the assembly was returned." }
+      },
+      "required": ["id", "gtcId", "gtcSerial", "chamberType", "gelPackIds", "status", "ownerId", "createdAt"]
+    }
+  },
+  "auth": {
+    "providers": ["password", "anonymous"]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": { "$ref": "#/entities/UserProfile" },
+          "description": "Stores user profiles.",
+          "params": [{ "name": "userId", "description": "The user's unique ID." }]
+        }
+      },
+      {
+        "path": "/gelPacks/{gelPackId}",
+        "definition": {
+          "entityName": "GelPack",
+          "schema": { "$ref": "#/entities/GelPack" },
+          "description": "Stores all gel pack documents.",
+          "params": [{ "name": "gelPackId", "description": "The unique ID of the gel pack." }]
+        }
+      },
+      {
+        "path": "/gtcs/{gtcId}",
+        "definition": {
+          "entityName": "GTC",
+          "schema": { "$ref": "#/entities/GTC" },
+          "description": "Stores all GTC box documents.",
+          "params": [{ "name": "gtcId", "description": "The unique ID of the GTC box." }]
+        }
+      },
+      {
+        "path": "/assemblies/{assemblyId}",
+        "definition": {
+          "entityName": "Assembly",
+          "schema": { "$ref": "#/entities/Assembly" },
+          "description": "Stores all assembly/trip documents.",
+          "params": [{ "name": "assemblyId", "description": "The unique ID of the assembly." }]
+        }
+      }
+    ],
+    "reasoning": "The data structure is updated to support the detailed gel pack management system. User profiles are stored in a top-level collection to manage user-specific settings like conditioning times. The `gelPacks` collection stores all gel pack data, with a denormalized `ownerId` field on each document. This is critical for writing secure, scalable Firestore rules that allow users to only access and modify their own data, avoiding costly and insecure `get()` calls in the rules themselves. The `GelPack` entity now contains all the required fields like model, volume, status, and conditioning history, aligning with the business logic. New entities `GTC` and `Assembly` are added to manage the box assembly process."
+  }
+}

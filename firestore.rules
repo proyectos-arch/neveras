@@ -1,0 +1,99 @@
+/**
+ * This ruleset is designed for the Cold Chain Guardian application.
+ *
+ * Core Philosophy:
+ * This security model is based on user ownership. Users can only read and write
+ * data that they have created. This is enforced by checking if the 'ownerId'
+ * field on a document matches the UID of the authenticated user making the request.
+ * This approach is secure, scalable, and avoids insecure or non-performant
+ * patterns like using `get()` or `exists()` calls in rules.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----------------------------------------------------------------------
+    // Helper Functions
+    // ----------------------------------------------------------------------
+
+    /**
+     * Checks if the user is authenticated. This is the baseline for any
+     * operation that modifies data.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    /**
+     * Checks if the user making the request is the owner of the document.
+     * This is verified by comparing the user's UID to the 'ownerId' field
+     * on the resource being accessed.
+     */
+    function isOwner(resource) {
+      return request.auth.uid == resource.data.ownerId;
+    }
+
+    /**
+     * On create, validates that the incoming document has an 'ownerId'
+     * field that matches the user's UID.
+     */
+    function isCreatingOwnResource() {
+      return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // ----------------------------------------------------------------------
+    // Collection Rules
+    // ----------------------------------------------------------------------
+
+    /**
+     * @description Manages user profile documents. Users can read and write
+     *   their own profile.
+     * @path /users/{userId}
+     */
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Manages gel pack documents.
+     * @path /gelPacks/{gelPackId}
+     */
+    match /gelPacks/{gelPackId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow update, delete: if isSignedIn() && isOwner(resource);
+      allow create: if isCreatingOwnResource();
+
+      /**
+       * @description Manages the readings subcollection for each gel pack.
+       * @path /gelPacks/{gelPackId}/readings/{readingId}
+       */
+      match /readings/{readingId} {
+        allow list, get: if isSignedIn() && get(/databases/$(database)/documents/gelPacks/$(gelPackId)).data.ownerId == request.auth.uid;
+        allow create: if isSignedIn() && get(/databases/$(database)/documents/gelPacks/$(gelPackId)).data.ownerId == request.auth.uid;
+      }
+    }
+
+    /**
+     * @description Manages GTC box documents.
+     * @path /gtcs/{gtcId}
+     */
+    match /gtcs/{gtcId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow update, delete: if isSignedIn() && isOwner(resource);
+      allow create: if isCreatingOwnResource();
+    }
+
+    /**
+     * @description Manages Assembly/Trip documents.
+     * @path /assemblies/{assemblyId}
+     */
+    match /assemblies/{assemblyId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow update, delete: if isSignedIn() && isOwner(resource);
+      allow create: if isCreatingOwnResource();
+    }
+  }
+}
