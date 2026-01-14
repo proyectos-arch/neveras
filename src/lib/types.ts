@@ -12,7 +12,7 @@ export type UserRole = 'super-admin' | 'admin' | 'operator';
 
 export type ConditioningEvent = {
   startTime: string; // ISO 8601 string
-  endTime?: string; // ISO 8601 string
+  endTime?: string | null; // ISO 8601 string
   chamberType: string; // Keep as string for flexibility from settings
 };
 
@@ -30,7 +30,7 @@ export interface Reading {
 
 export interface GelPack {
   id: string;
-  serial: string; 
+  serial: string;
   model: GelPackModel;
   volume: GelPackVolume;
   chamberType: ChamberType; // The main chamber type associated with the model
@@ -40,29 +40,29 @@ export interface GelPack {
   conditioningHistory: ConditioningEvent[];
   lastConditioningEvent?: ConditioningEvent | null;
   qrCodeUrl: string;
-  readings?: Reading[]; 
+  readings?: Reading[];
 }
 
 export interface ConditioningStep {
-    chamber: string;
-    hours: number;
+  chamber: string;
+  hours: number;
 }
 
 export interface ConditioningProfile {
-    steps: ConditioningStep[];
+  steps: ConditioningStep[];
 }
 
 export interface UserProfile {
-    userId: string;
-    email: string;
-    displayName?: string;
-    leakedTestHours: number;
-    conditioningProfiles: {
-        s4: ConditioningProfile;
-        s22: ConditioningProfile;
-        m20: ConditioningProfile;
-    };
-    role: UserRole;
+  userId: string;
+  email: string;
+  displayName?: string;
+  leakedTestHours: number;
+  conditioningProfiles: {
+    s4: ConditioningProfile;
+    s22: ConditioningProfile;
+    m20: ConditioningProfile;
+  };
+  role: UserRole;
 }
 
 export interface GTC {

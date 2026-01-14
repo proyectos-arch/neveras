@@ -36,11 +36,11 @@ export function ScanButton() {
   const [scannedPack, setScannedPack] = React.useState<GelPack | null>(null);
   const [hasCameraPermission, setHasCameraPermission] = React.useState(true);
   const [isLoading, setIsLoading] = React.useState(false);
-  
+
   const videoRef = React.useRef<HTMLVideoElement>(null);
   const canvasRef = React.useRef<HTMLCanvasElement>(null);
   const animationFrameId = React.useRef<number>();
-  
+
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
@@ -55,43 +55,43 @@ export function ScanButton() {
     let packId = scannedData;
 
     try {
-        const url = new URL(scannedData);
-        const pathParts = url.pathname.split('/');
-        packId = pathParts.filter(p => p).pop() || '';
+      const url = new URL(scannedData);
+      const pathParts = url.pathname.split('/');
+      packId = pathParts.filter(p => p).pop() || '';
     } catch (e) {
-        // Not a valid URL, assume the data is the ID itself
+      // Not a valid URL, assume the data is the ID itself
     }
-    
+
     if (!firestore) return;
     const packRef = doc(firestore, 'gelPacks', packId);
 
     try {
-        const docSnap = await getDoc(packRef);
-        if (!docSnap.exists()) {
-            throw new Error("Gel pack no encontrado.");
-        }
-        
-        const packData = { id: docSnap.id, ...docSnap.data() } as GelPack;
-        
-        setScannedPack(packData);
-        setIsScannerOpen(false);
-        setIsChamberSelectorOpen(true);
+      const docSnap = await getDoc(packRef);
+      if (!docSnap.exists()) {
+        throw new Error("Gel pack no encontrado.");
+      }
+
+      const packData = { id: docSnap.id, ...docSnap.data() } as GelPack;
+
+      setScannedPack(packData);
+      setIsScannerOpen(false);
+      setIsChamberSelectorOpen(true);
 
     } catch (error: any) {
-         toast({
-            variant: 'destructive',
-            title: 'Error al Escanear',
-            description: error.message,
-        });
+      toast({
+        variant: 'destructive',
+        title: 'Error al Escanear',
+        description: error.message,
+      });
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
   const tick = () => {
     if (isLoading || isChamberSelectorOpen) {
-        if(animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
-        return;
+      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+      return;
     };
     if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA && canvasRef.current) {
       const video = videoRef.current;
@@ -108,17 +108,17 @@ export function ScanButton() {
         });
 
         if (code) {
-            if (animationFrameId.current) {
-                cancelAnimationFrame(animationFrameId.current);
-            }
-            handleScan(code.data);
-            return;
+          if (animationFrameId.current) {
+            cancelAnimationFrame(animationFrameId.current);
+          }
+          handleScan(code.data);
+          return;
         }
       }
     }
     animationFrameId.current = requestAnimationFrame(tick);
   };
-  
+
   React.useEffect(() => {
     let stream: MediaStream | null = null;
     const startScan = async () => {
@@ -144,57 +144,57 @@ export function ScanButton() {
     };
 
     const stopScan = () => {
-        if (stream) {
-            stream.getTracks().forEach((track) => track.stop());
-        }
-        if(animationFrameId.current) {
-            cancelAnimationFrame(animationFrameId.current);
-        }
-        if (videoRef.current) {
-            videoRef.current.srcObject = null;
-        }
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     }
 
     if (isScannerOpen) {
-        startScan();
+      startScan();
     } else {
-        stopScan();
+      stopScan();
     }
 
     return () => stopScan();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScannerOpen, toast, isLoading, isChamberSelectorOpen]);
-  
+
   const handleChamberSelect = async (chamberOrStep: ChamberType | 'Leaked Test' | 'FRIDGE-30') => {
-    if(!scannedPack || !firestore) return;
+    if (!scannedPack || !firestore) return;
 
     setIsLoading(true);
     const packRef = doc(firestore, 'gelPacks', scannedPack.id);
 
     try {
-        const now = new Date();
-        const newEvent = { chamberType: chamberOrStep, startTime: now.toISOString(), endTime: undefined };
-        
-        const docSnap = await getDoc(packRef);
-        const currentPackData = docSnap.data() as GelPack;
-        let updatedHistory = currentPackData.conditioningHistory || [];
-        
-        const newStatus = chamberOrStep === 'Leaked Test' ? 'Leaked Test' : 'Conditioning';
-        
-        if (currentPackData.status === 'Conditioning' || currentPackData.status === 'Leaked Test') {
-            const lastEventIndex = updatedHistory.length - 1;
-            if (lastEventIndex >= 0 && !updatedHistory[lastEventIndex].endTime) {
-                updatedHistory[lastEventIndex].endTime = now.toISOString();
-            }
-        }
-        
-        updatedHistory.push(newEvent);
+      const now = currentTime;
+      const newEvent = { chamberType: chamberOrStep, startTime: now.toISOString(), endTime: null };
 
-        await updateDoc(packRef, {
-            status: newStatus,
-            conditioningHistory: updatedHistory,
-            lastConditioningEvent: newEvent
-        });
+      const docSnap = await getDoc(packRef);
+      const currentPackData = docSnap.data() as GelPack;
+      let updatedHistory = currentPackData.conditioningHistory || [];
+
+      const newStatus = chamberOrStep === 'Leaked Test' ? 'Leaked Test' : 'Conditioning';
+
+      if (currentPackData.status === 'Conditioning' || currentPackData.status === 'Leaked Test') {
+        const lastEventIndex = updatedHistory.length - 1;
+        if (lastEventIndex >= 0 && !updatedHistory[lastEventIndex].endTime) {
+          updatedHistory[lastEventIndex].endTime = now.toISOString();
+        }
+      }
+
+      updatedHistory.push(newEvent);
+
+      await updateDoc(packRef, {
+        status: newStatus,
+        conditioningHistory: updatedHistory,
+        lastConditioningEvent: newEvent
+      });
 
       toast({
         title: 'Movimiento Registrado',
@@ -212,75 +212,70 @@ export function ScanButton() {
     setIsChamberSelectorOpen(false);
     setScannedPack(null);
   };
-  
+
   const handleEndConditioning = async () => {
-    if(!scannedPack || !firestore) return;
+    if (!scannedPack || !firestore) return;
     setIsLoading(true);
     const packRef = doc(firestore, 'gelPacks', scannedPack.id);
     try {
-        const docSnap = await getDoc(packRef);
-        const packData = docSnap.data() as GelPack;
-        const history = packData.conditioningHistory || [];
-        const lastEventIndex = history.length - 1;
-        const now = new Date().toISOString();
+      const docSnap = await getDoc(packRef);
+      const packData = docSnap.data() as GelPack;
+      const history = packData.conditioningHistory || [];
+      const lastEventIndex = history.length - 1;
+      const now = currentTime.toISOString();
 
-        if (lastEventIndex >= 0 && !history[lastEventIndex].endTime) {
-            const updatedHistory = [...history];
-            updatedHistory[lastEventIndex].endTime = now;
-            await updateDoc(packRef, {
-                status: 'Ready',
-                conditioningHistory: updatedHistory,
-                lastConditioningEvent: updatedHistory[lastEventIndex]
-            });
-            toast({ title: 'Acondicionamiento Finalizado', description: `${packData.serial} ahora está en estado "Ready".` });
-        } else {
-            throw new Error("No hay un evento de acondicionamiento activo para finalizar.");
-        }
+      if (lastEventIndex >= 0 && !history[lastEventIndex].endTime) {
+        const updatedHistory = [...history];
+        updatedHistory[lastEventIndex].endTime = now;
+        await updateDoc(packRef, {
+          status: 'Ready',
+          conditioningHistory: updatedHistory,
+          lastConditioningEvent: updatedHistory[lastEventIndex]
+        });
+        toast({ title: 'Acondicionamiento Finalizado', description: `${packData.serial} ahora está en estado "Ready".` });
+      } else {
+        throw new Error("No hay un evento de acondicionamiento activo para finalizar.");
+      }
     } catch (e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
     setIsLoading(false);
     setIsChamberSelectorOpen(false);
     setScannedPack(null);
   };
-  
+
   const handleInspectionDecision = async (newStatus: 'Por activar' | 'Discarded') => {
-    if(!scannedPack || !firestore) return;
+    if (!scannedPack || !firestore) return;
     setIsLoading(true);
     const packRef = doc(firestore, 'gelPacks', scannedPack.id);
     try {
-        await updateDoc(packRef, { status: newStatus });
-         toast({
-            title: 'Estado Actualizado',
-            description: `El pack ${scannedPack.serial} ahora está: ${newStatus}.`,
-        });
-    } catch(e: any) {
-        toast({ variant: 'destructive', title: 'Error', description: e.message });
+      await updateDoc(packRef, { status: newStatus });
+      toast({
+        title: 'Estado Actualizado',
+        description: `El pack ${scannedPack.serial} ahora está: ${newStatus}.`,
+      });
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: 'Error', description: e.message });
     }
-     setIsLoading(false);
+    setIsLoading(false);
     setIsChamberSelectorOpen(false);
     setScannedPack(null);
   }
 
   const { needsAction, message } = scannedPack ? getNextStep(scannedPack, currentTime, userProfile) : { needsAction: false, message: '' };
-  
+
   const getDialogDescription = () => {
     if (!scannedPack) return '';
     if (needsAction) {
-        return message;
+      return message;
     }
     return `El pack ${scannedPack.serial} está en estado '${scannedPack.status}'. No requiere acción inmediata.`;
   }
 
-  const chamberStepRegex = /Mover a (cámara|Fridge) ([\w\s°+\-]+)/;
-  const match = message.match(chamberStepRegex);
-  
-  let nextChamberLabel: string | null = null;
-  if(match) {
-    nextChamberLabel = match[1] === 'Fridge' ? match[2] : `Cámara ${match[2]}`;
-  }
-  
-  const nextChamber = nextChamberLabel ? chamberTypes.find(c => c.label === nextChamberLabel) : null;
+  // Buscar coincidencia directa "a [Tipo Cámara]" o "a [Label Cámara]"
+  const nextChamber = chamberTypes.find(c =>
+    message.includes(` a ${c.type}`) || message.includes(` a ${c.label}`)
+  );
 
   const renderActionButtons = () => {
     if (!scannedPack) return null;
@@ -288,40 +283,46 @@ export function ScanButton() {
       return (
         <Alert>
           <AlertTitle>No se requiere acción</AlertTitle>
-          <AlertDescription>{getDialogDescription()}</AlertDescription>
+          <AlertDescription>
+            {getDialogDescription()}
+            {scannedPack.lastConditioningEvent?.startTime && (
+              <TimeElapsed startTime={scannedPack.lastConditioningEvent.startTime} currentTime={currentTime} />
+            )}
+          </AlertDescription>
         </Alert>
       );
     }
 
-    if (message.includes('Leaked Test')) {
-        const leakTestChamber = chamberTypes.find(c => c.type === 'Leaked Test');
-        if (!leakTestChamber) return null;
-        return <ChamberButton chamber={leakTestChamber} onClick={() => handleChamberSelect('Leaked Test')} isLoading={isLoading} />;
-    }
-    
-    if (nextChamber) {
-        return <ChamberButton chamber={nextChamber} onClick={() => handleChamberSelect(nextChamber.type)} isLoading={isLoading} />;
+    // Solo mostrar Leaked Test si es el paso inicial
+    if (message.includes('Iniciar en Leaked Test')) {
+      const leakTestChamber = chamberTypes.find(c => c.type === 'Leaked Test');
+      if (!leakTestChamber) return null;
+      return <ChamberButton chamber={leakTestChamber} onClick={() => handleChamberSelect('Leaked Test')} isLoading={isLoading} />;
     }
 
-    if (message.includes('"Ready"')) {
-        return (
-            <Button onClick={handleEndConditioning} disabled={isLoading} variant="default" size="lg" className="h-24 text-xl bg-green-600 hover:bg-green-700">
-                {isLoading ? <Loader2 className="h-8 w-8 animate-spin"/> : 'Finalizar y Marcar como "Ready"'}
-            </Button>
-        );
+    if (nextChamber) {
+      return <ChamberButton chamber={nextChamber} onClick={() => handleChamberSelect(nextChamber.type)} isLoading={isLoading} />;
     }
-    
+
+    if (message.includes('"RTU"') || message.includes('"Ready"')) {
+      return (
+        <Button onClick={handleEndConditioning} disabled={isLoading} variant="default" size="lg" className="h-24 text-xl bg-green-600 hover:bg-green-700">
+          {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : 'Finalizar y Marcar como "RTU"'}
+        </Button>
+      );
+    }
+
     if (message.includes('Aprobar o descartar')) {
-        return (
-            <div className="grid grid-cols-2 gap-4">
-                 <Button onClick={() => handleInspectionDecision('Discarded')} disabled={isLoading} variant="destructive" size="lg" className="h-24 text-xl">
-                    {isLoading ? <Loader2 className="h-8 w-8 animate-spin"/> : <><Trash2 className="h-8 w-8 mr-2"/> Descartar</>}
-                </Button>
-                 <Button onClick={() => handleInspectionDecision('Por activar')} disabled={isLoading} variant="default" size="lg" className="h-24 text-xl bg-green-600 hover:bg-green-700">
-                    {isLoading ? <Loader2 className="h-8 w-8 animate-spin"/> : <><Check className="h-8 w-8 mr-2"/> Aprobar</>}
-                </Button>
-            </div>
-        );
+      return (
+        <div className="grid grid-cols-2 gap-4">
+          <Button onClick={() => handleInspectionDecision('Discarded')} disabled={isLoading} variant="destructive" size="lg" className="h-24 text-xl">
+            {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <><Trash2 className="h-8 w-8 mr-2" /> Descartar</>}
+          </Button>
+          <Button onClick={() => handleInspectionDecision('Por activar')} disabled={isLoading} variant="default" size="lg" className="h-24 text-xl bg-green-600 hover:bg-green-700">
+            {isLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : <><Check className="h-8 w-8 mr-2" /> Aprobar</>}
+          </Button>
+        </div>
+      );
     }
 
     return null;
@@ -344,29 +345,29 @@ export function ScanButton() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-center items-center">
-              <div className="relative w-full aspect-video rounded-md bg-muted">
-                <video ref={videoRef} className="w-full h-full" autoPlay muted playsInline />
-                {isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-                        <Loader2 className="h-10 w-10 animate-spin text-white" />
-                    </div>
-                )}
-              </div>
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
+            <div className="relative w-full aspect-video rounded-md bg-muted">
+              <video ref={videoRef} className="w-full h-full" autoPlay muted playsInline />
+              {isLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                  <Loader2 className="h-10 w-10 animate-spin text-white" />
+                </div>
+              )}
+            </div>
+            <canvas ref={canvasRef} style={{ display: 'none' }} />
           </div>
           {!hasCameraPermission && isScannerOpen && (
-              <Alert variant="destructive">
-                  <AlertTitle>Se Requiere Acceso a la Cámara</AlertTitle>
-                  <AlertDescription>
-                  Por favor, permite el acceso a la cámara para usar esta función.
-                  </AlertDescription>
-              </Alert>
+            <Alert variant="destructive">
+              <AlertTitle>Se Requiere Acceso a la Cámara</AlertTitle>
+              <AlertDescription>
+                Por favor, permite el acceso a la cámara para usar esta función.
+              </AlertDescription>
+            </Alert>
           )}
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={isChamberSelectorOpen} onOpenChange={(open) => {
-        if(!open) {
+        if (!open) {
           setIsChamberSelectorOpen(false);
           setScannedPack(null);
         }
@@ -374,14 +375,14 @@ export function ScanButton() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-                Acción para: <span className="text-primary">{scannedPack?.serial}</span>
+              Acción para: <span className="text-primary">{scannedPack?.serial}</span>
             </DialogTitle>
             <DialogDescription>
-             {getDialogDescription()}
+              {getDialogDescription()}
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 gap-4 py-4">
-              {renderActionButtons()}
+            {renderActionButtons()}
           </div>
         </DialogContent>
       </Dialog>
@@ -391,31 +392,54 @@ export function ScanButton() {
 
 
 function ChamberButton({ chamber, onClick, isLoading }: { chamber: { type: any, label: string, color: string, icon: React.ElementType }, onClick: () => void, isLoading: boolean }) {
-    const Icon = chamber.icon;
-    return (
-         <button
-            key={chamber.type}
-            className={cn(
-                'group relative flex h-24 w-full items-center justify-center overflow-hidden rounded-lg text-xl font-bold text-white shadow-lg transition-all hover:scale-105',
-                chamber.color,
-                isLoading && 'cursor-not-allowed opacity-50'
-            )}
-            onClick={onClick}
-            disabled={isLoading}
-            >
-            {isLoading ? (
-                <Loader2 className="h-8 w-8 animate-spin" />
-            ) : (
-                <>
-                <div className="z-10 flex items-center gap-4">
-                    <Icon className="h-8 w-8" />
-                    <span>{chamber.label}</span>
-                </div>
-                <div className="absolute inset-0 bg-black/10 opacity-0 transition-opacity group-hover:opacity-100" />
-                </>
-            )}
-            </button>
-    )
+  const Icon = chamber.icon;
+  return (
+    <button
+      key={chamber.type}
+      className={cn(
+        'group relative flex h-24 w-full items-center justify-center overflow-hidden rounded-lg text-xl font-bold text-white shadow-lg transition-all hover:scale-105',
+        chamber.color,
+        isLoading && 'cursor-not-allowed opacity-50'
+      )}
+      onClick={onClick}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <Loader2 className="h-8 w-8 animate-spin" />
+      ) : (
+        <>
+          <div className="z-10 flex items-center gap-4">
+            <Icon className="h-8 w-8" />
+            <span>{chamber.label}</span>
+          </div>
+          <div className="absolute inset-0 bg-black/10 opacity-0 transition-opacity group-hover:opacity-100" />
+        </>
+      )}
+    </button>
+  )
 }
 
-    
+function TimeElapsed({ startTime, currentTime }: { startTime: string, currentTime: Date }) {
+  const start = new Date(startTime);
+  const diff = Math.max(0, currentTime.getTime() - start.getTime());
+
+  const seconds = Math.floor((diff / 1000) % 60);
+  const minutes = Math.floor((diff / (1000 * 60)) % 60);
+  const hours = Math.floor((diff / (1000 * 60 * 60)));
+
+  const pad = (n: number) => n.toString().padStart(2, '0');
+
+  return (
+    <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg mt-4 border border-border/50">
+      <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-1">Tiempo en Fase Actual</span>
+      <div className="flex items-baseline gap-1">
+        <span className="text-3xl font-mono font-bold text-foreground">
+          {pad(hours)}:{pad(minutes)}:{pad(seconds)}
+        </span>
+        <span className="text-xs text-muted-foreground">(Simulado)</span>
+      </div>
+    </div>
+  );
+}
+
+
