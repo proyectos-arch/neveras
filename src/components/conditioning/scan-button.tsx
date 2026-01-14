@@ -173,7 +173,7 @@ export function ScanButton() {
 
     try {
         const now = new Date();
-        const newEvent = { chamberType: chamberOrStep, startTime: now.toISOString(), endTime: null };
+        const newEvent = { chamberType: chamberOrStep, startTime: now.toISOString(), endTime: undefined };
         
         const docSnap = await getDoc(packRef);
         const currentPackData = docSnap.data() as GelPack;
@@ -305,7 +305,7 @@ export function ScanButton() {
 
     if (message.includes('"Ready"')) {
         return (
-            <Button onClick={handleEndConditioning} disabled={isLoading} variant="success" size="lg" className="h-24 text-xl">
+            <Button onClick={handleEndConditioning} disabled={isLoading} variant="default" size="lg" className="h-24 text-xl bg-green-600 hover:bg-green-700">
                 {isLoading ? <Loader2 className="h-8 w-8 animate-spin"/> : 'Finalizar y Marcar como "Ready"'}
             </Button>
         );
@@ -317,7 +317,7 @@ export function ScanButton() {
                  <Button onClick={() => handleInspectionDecision('Discarded')} disabled={isLoading} variant="destructive" size="lg" className="h-24 text-xl">
                     {isLoading ? <Loader2 className="h-8 w-8 animate-spin"/> : <><Trash2 className="h-8 w-8 mr-2"/> Descartar</>}
                 </Button>
-                 <Button onClick={() => handleInspectionDecision('Por activar')} disabled={isLoading} variant="success" size="lg" className="h-24 text-xl">
+                 <Button onClick={() => handleInspectionDecision('Por activar')} disabled={isLoading} variant="default" size="lg" className="h-24 text-xl bg-green-600 hover:bg-green-700">
                     {isLoading ? <Loader2 className="h-8 w-8 animate-spin"/> : <><Check className="h-8 w-8 mr-2"/> Aprobar</>}
                 </Button>
             </div>

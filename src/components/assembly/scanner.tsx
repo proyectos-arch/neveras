@@ -237,8 +237,8 @@ export function AssemblyScanner({ assembly, onPackScanned, onCompleteAssembly, s
 
            <Button 
                 onClick={onCompleteAssembly}
-                className="w-full"
-                variant="success"
+                className="w-full bg-green-600 hover:bg-green-700"
+                variant="default"
                 disabled={!canComplete || isProcessing || isSubmitting}
             >
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCheck className="mr-2 h-4 w-4" />}

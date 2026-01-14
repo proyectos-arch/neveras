@@ -170,7 +170,7 @@ function PackRow({ pack }: { pack: GelPack }) {
                 <Button size="sm" variant="outline" onClick={() => handleUpdateStatus('Discarded')} disabled={isLoading} title="Descartar pack">
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-destructive"/>}
                 </Button>
-                <Button size="sm" variant="success" onClick={() => handleUpdateStatus('Por activar')} disabled={isLoading} title="Aprobar pack">
+                <Button size="sm" variant="default" className="bg-green-600 hover:bg-green-700" onClick={() => handleUpdateStatus('Por activar')} disabled={isLoading} title="Aprobar pack">
                     {isLoading ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
                 </Button>
             </div>

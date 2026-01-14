@@ -23,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Loader2, MapPin, Thermometer } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { ReadingStatus } from '@/lib/types';
 import { TEMP_LOWER_BOUND, TEMP_UPPER_BOUND } from '@/lib/constants';
 import { useFirestore } from '@/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -98,7 +97,7 @@ export function AddReadingForm({ gelPackId }: { gelPackId: string }) {
     setIsSubmitting(true);
     try {
         const readingsCol = collection(firestore, 'gelPacks', gelPackId, 'readings');
-        const readingStatus: ReadingStatus = values.temperature > TEMP_UPPER_BOUND || values.temperature < TEMP_LOWER_BOUND ? 'Alert' : 'Normal';
+        const readingStatus: 'Normal' | 'Alert' = values.temperature > TEMP_UPPER_BOUND || values.temperature < TEMP_LOWER_BOUND ? 'Alert' : 'Normal';
         
         await addDoc(readingsCol, {
             gelPackId,
