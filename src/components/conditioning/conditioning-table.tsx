@@ -38,7 +38,6 @@ export function ConditioningTable({
 }: {
   gelPacks: GelPack[];
   userProfile: UserProfile | null;
-  userProfile: UserProfile | null;
 }) {
   const { currentTime } = useCurrentTime();
   const [qrDialogOpen, setQrDialogOpen] = React.useState(false);

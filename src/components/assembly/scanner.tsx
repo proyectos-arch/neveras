@@ -95,8 +95,11 @@ export function AssemblyScanner({ assembly, onPackScanned, onCompleteAssembly, s
             const packData = { id: packDocSnap.id, ...packDocSnap.data() } as GelPack;
             const gtcData = gtcDocSnap.data() as GTC;
 
-            // Calculate implicit readiness
-            const { isReady } = getNextStep(packData, currentTime, userProfile as UserProfile);
+            // Calculate implicit readiness - safe cast for userProfile
+            const fullUserProfile = userProfile && 'userId' in userProfile && 'email' in userProfile 
+                ? (userProfile as unknown as UserProfile) 
+                : null;
+            const { isReady } = getNextStep(packData, currentTime, fullUserProfile);
 
             if (packData.status !== 'Ready' && !isReady) {
                 throw new Error(`El gel pack ${packData.serial} no está en estado "Ready". Su estado actual es "${packData.status}".`);
