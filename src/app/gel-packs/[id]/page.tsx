@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { notFound } from 'next/navigation';
 import { TemperatureChart } from '@/components/gel-pack/temperature-chart';
 import { ReadingsTable } from '@/components/gel-pack/readings-table';
@@ -41,12 +40,12 @@ function getPackStatus(pack: GelPack, readings: Reading[]): {
   };
 }
 
-export default function GelPackDetailPage({
-  params,
-}: {
+type GelPackDetailPageProps = {
   params: { id: string };
-}) {
-  const { id } = use(params);
+};
+
+export default function GelPackDetailPage({ params }: GelPackDetailPageProps) {
+  const { id } = params;
   const { user } = useUser();
   const firestore = useFirestore();
 

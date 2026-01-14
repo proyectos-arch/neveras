@@ -6,7 +6,7 @@ import './globals.css';
 import { AppShell } from '@/components/layout/app-shell';
 import { Toaster } from '@/components/ui/toaster';
 import { FirebaseClientProvider, useUser } from '@/firebase';
-import { usePathname } from 'next/navigation';
+import { usePathname, redirect } from 'next/navigation';
 import { Snowflake } from 'lucide-react';
 import { DebugTimeProvider } from '@/context/DebugTimeContext';
 import { TimeTravelClock } from '@/components/debug/time-travel-clock';
@@ -35,17 +35,14 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const isAuthPage = pathname === '/login' || pathname === '/signup';
 
   if (isAuthPage) {
+    if (user) {
+      redirect('/');
+    }
     return <>{children}</>;
   }
   
   if (!user) {
-    // This case can happen for a brief moment during redirection.
-    // Showing a loader is better than a flash of an empty screen.
-     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <Snowflake className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    redirect('/login');
   }
 
   return <AppShell>{children}</AppShell>;
