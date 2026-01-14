@@ -22,7 +22,7 @@ import Link from 'next/link';
 import { formatDistance } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '../ui/button';
-import { Check, Loader2, Trash2, Bell, ArrowRight } from 'lucide-react';
+import { Check, Loader2, Trash2, Bell, ArrowRight, Snowflake } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -49,85 +49,115 @@ export function ConditioningTable({
   });
 
   return (
-    <div className="space-y-8">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="text-primary"/>
-            Packs que Requieren Acción
-          </CardTitle>
-          <CardDescription>
-            Estos packs han completado su tiempo y necesitan ser movidos al siguiente paso. Escanéalos para continuar.
+    <div className="grid gap-6 w-full">
+      <Card className="border-l-4 border-l-primary shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <Bell className="h-5 w-5 text-primary"/>
+              </div>
+              Packs que Requieren Acción
+            </CardTitle>
+            {packsRequiringAction.length > 0 && (
+              <Badge variant="destructive" className="text-xs">
+                {packsRequiringAction.length} pendiente{packsRequiringAction.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+          <CardDescription className="mt-1.5">
+            Estos packs han completado su tiempo y necesitan ser movidos al siguiente paso.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Serial</TableHead>
-                <TableHead>Siguiente Paso Recomendado</TableHead>
-                <TableHead className="text-right">Acción</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {packsRequiringAction.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24">
-                    ¡Todo en orden! No hay acciones requeridas.
-                  </TableCell>
+        <CardContent className="pt-0">
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">Serial</TableHead>
+                  <TableHead className="font-semibold">Siguiente Paso Recomendado</TableHead>
+                  <TableHead className="text-right font-semibold">Acción</TableHead>
                 </TableRow>
-              ) : (
-                packsRequiringAction.map(pack => {
-                  const { message } = getNextStep(pack, currentTime, userProfile);
-                  return (
-                    <TableRow key={pack.id} className="bg-green-500/10 hover:bg-green-500/20">
-                      <TableCell className="font-medium">{pack.serial}</TableCell>
-                      <TableCell className="font-semibold text-green-700">{message}</TableCell>
-                      <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link href={`/gel-packs/${pack.id}`} className="flex items-center gap-1">
-                                <span>Ver Pack</span>
-                                <ArrowRight className="h-4 w-4" />
+              </TableHeader>
+              <TableBody>
+                {packsRequiringAction.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center h-20 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-1">
+                        <Check className="h-5 w-5 text-green-500" />
+                        <span>¡Todo en orden! No hay acciones requeridas.</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  packsRequiringAction.map(pack => {
+                    const { message } = getNextStep(pack, currentTime, userProfile);
+                    return (
+                      <TableRow key={pack.id} className="bg-green-500/5 hover:bg-green-500/10 transition-colors">
+                        <TableCell className="font-mono font-medium">{pack.serial}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            {message}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" asChild className="hover:bg-primary hover:text-primary-foreground transition-colors">
+                            <Link href={`/gel-packs/${pack.id}`} className="flex items-center gap-1.5">
+                              <span>Ver Pack</span>
+                              <ArrowRight className="h-4 w-4" />
                             </Link>
                           </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Historial General</CardTitle>
-          <CardDescription>
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg">Historial General</CardTitle>
+            {otherPacks.length > 0 && (
+              <Badge variant="secondary" className="text-xs">
+                {otherPacks.length} gel pack{otherPacks.length > 1 ? 's' : ''}
+              </Badge>
+            )}
+          </div>
+          <CardDescription className="mt-1.5">
             Estado y ubicación actual de todos los demás gel packs en el sistema.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Serial</TableHead>
-                <TableHead>Ubicación / Acción</TableHead>
-                <TableHead className="text-right">Tiempo en Fase</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {otherPacks.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24">
-                    No se encontraron gel packs.
-                  </TableCell>
+        <CardContent className="pt-0">
+          <div className="rounded-lg border overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50">
+                  <TableHead className="font-semibold">Serial</TableHead>
+                  <TableHead className="font-semibold">Ubicación / Acción</TableHead>
+                  <TableHead className="text-right font-semibold">Tiempo en Fase</TableHead>
                 </TableRow>
-              ) : (
-                otherPacks.map((pack) => <PackRow key={pack.id} pack={pack} />)
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {otherPacks.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center h-20 text-muted-foreground">
+                      <div className="flex flex-col items-center gap-1">
+                        <Snowflake className="h-5 w-5" />
+                        <span>No se encontraron gel packs. Añade uno para comenzar.</span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  otherPacks.map((pack) => <PackRow key={pack.id} pack={pack} />)
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

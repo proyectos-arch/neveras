@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   onSnapshot,
+  getDocFromCache,
   type DocumentReference,
   type DocumentSnapshot,
   type DocumentData,
@@ -16,8 +17,9 @@ export interface UseDocResult<T> {
 
 export function useDoc<T>(ref: DocumentReference | null): UseDocResult<T> {
   const [data, setData] = useState<(T & { id: string }) | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
+  const hasLoadedFromCache = useRef(false);
 
   const path = ref?.path;
 
@@ -28,7 +30,21 @@ export function useDoc<T>(ref: DocumentReference | null): UseDocResult<T> {
       return;
     }
 
+    hasLoadedFromCache.current = false;
     setIsLoading(true);
+
+    // Try to load from cache first for instant display
+    getDocFromCache(ref)
+      .then((cachedDoc) => {
+        if (cachedDoc.exists() && !hasLoadedFromCache.current) {
+          hasLoadedFromCache.current = true;
+          setData({ ...(cachedDoc.data() as T), id: cachedDoc.id });
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        // No cache available, will wait for server
+      });
 
     const unsubscribe = onSnapshot(
       ref,
@@ -47,9 +63,8 @@ export function useDoc<T>(ref: DocumentReference | null): UseDocResult<T> {
       }
     );
 
-    // Unsubscribe when the component unmounts or the ref changes.
     return () => unsubscribe();
-  }, [path]); // Re-subscribe only if the document path changes.
+  }, [path]);
 
   return { data, isLoading, error };
 }

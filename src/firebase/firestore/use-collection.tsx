@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Query,
   onSnapshot,
+  getDocsFromCache,
   DocumentData,
   FirestoreError,
   QuerySnapshot,
@@ -60,6 +61,7 @@ export function useCollection<T = any>(
   const [data, setData] = useState<StateDataType>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
+  const hasLoadedFromCache = useRef(false);
 
   useEffect(() => {
     if (!memoizedTargetRefOrQuery) {
@@ -69,10 +71,27 @@ export function useCollection<T = any>(
       return;
     }
 
+    hasLoadedFromCache.current = false;
     setIsLoading(true);
     setError(null);
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
+    // Try to load from cache first for instant display
+    getDocsFromCache(memoizedTargetRefOrQuery)
+      .then((cachedSnapshot) => {
+        if (cachedSnapshot.docs.length > 0 && !hasLoadedFromCache.current) {
+          hasLoadedFromCache.current = true;
+          const results: ResultItemType[] = [];
+          for (const doc of cachedSnapshot.docs) {
+            results.push({ ...(doc.data() as T), id: doc.id });
+          }
+          setData(results);
+          setIsLoading(false);
+        }
+      })
+      .catch(() => {
+        // No cache available, will wait for server
+      });
+
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -85,7 +104,6 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
         const path: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
@@ -100,7 +118,6 @@ export function useCollection<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );

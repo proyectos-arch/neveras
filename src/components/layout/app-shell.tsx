@@ -92,7 +92,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full">
         <Sidebar>
           <SidebarHeader>
             <Logo />
@@ -176,10 +176,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset className="flex-1 bg-secondary/50">
+        <SidebarInset className="flex-1 bg-secondary/50 w-full min-w-0">
           <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
             <SidebarTrigger className="md:hidden" />
-            <div className="w-full"></div>
+            <div className="flex-1"></div>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -202,7 +202,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </DropdownMenuContent>
               </DropdownMenu>
           </header>
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto w-full">
             {children}
           </div>
         </SidebarInset>
