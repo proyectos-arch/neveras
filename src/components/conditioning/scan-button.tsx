@@ -20,7 +20,7 @@ import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useCurrentTime } from '@/context/DebugTimeContext';
-import { getNextStep } from '@/lib/conditioning-logic';
+import { getNextStep, getCurrentStepDetails } from '@/lib/conditioning-logic';
 
 const chamberTypes: { type: ChamberType | 'Leaked Test' | 'FRIDGE-30'; label: string; color: string, icon: React.ElementType }[] = [
   { type: '-15-25', label: 'Cámara -15°C a -25°C', color: 'bg-blue-500', icon: Thermometer },
@@ -263,6 +263,7 @@ export function ScanButton() {
   }
 
   const { needsAction, message } = scannedPack ? getNextStep(scannedPack, currentTime, userProfile) : { needsAction: false, message: '' };
+  const stepDetails = scannedPack ? getCurrentStepDetails(scannedPack, userProfile) : null;
 
   const getDialogDescription = () => {
     if (!scannedPack) return '';
@@ -286,7 +287,11 @@ export function ScanButton() {
           <AlertDescription>
             {getDialogDescription()}
             {scannedPack.lastConditioningEvent?.startTime && (
-              <TimeElapsed startTime={scannedPack.lastConditioningEvent.startTime} currentTime={currentTime} />
+              <TimeElapsed
+                startTime={scannedPack.lastConditioningEvent.startTime}
+                currentTime={currentTime}
+                requiredHours={stepDetails?.hours}
+              />
             )}
           </AlertDescription>
         </Alert>
@@ -419,25 +424,53 @@ function ChamberButton({ chamber, onClick, isLoading }: { chamber: { type: any, 
   )
 }
 
-function TimeElapsed({ startTime, currentTime }: { startTime: string, currentTime: Date }) {
+function TimeElapsed({ startTime, currentTime, requiredHours }: { startTime: string, currentTime: Date, requiredHours?: number }) {
   const start = new Date(startTime);
   const diff = Math.max(0, currentTime.getTime() - start.getTime());
 
-  const seconds = Math.floor((diff / 1000) % 60);
-  const minutes = Math.floor((diff / (1000 * 60)) % 60);
-  const hours = Math.floor((diff / (1000 * 60 * 60)));
+  // Remaining calculation
+  let remainingMs = 0;
+  let isCompleted = false;
 
-  const pad = (n: number) => n.toString().padStart(2, '0');
+  if (requiredHours) {
+    const requiredMs = requiredHours * 60 * 60 * 1000;
+    remainingMs = requiredMs - diff;
+    if (remainingMs <= 0) {
+      remainingMs = 0;
+      isCompleted = true;
+    }
+  }
+
+  const formatTime = (ms: number) => {
+    const s = Math.floor((ms / 1000) % 60);
+    const m = Math.floor((ms / (1000 * 60)) % 60);
+    const h = Math.floor((ms / (1000 * 60 * 60)));
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${pad(h)}:${pad(m)}:${pad(s)}`;
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 bg-muted/50 rounded-lg mt-4 border border-border/50">
-      <span className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-1">Tiempo en Fase Actual</span>
-      <div className="flex items-baseline gap-1">
-        <span className="text-3xl font-mono font-bold text-foreground">
-          {pad(hours)}:{pad(minutes)}:{pad(seconds)}
+    <div className="grid grid-cols-2 gap-4 mt-6">
+      <div className="flex flex-col items-center justify-center p-3 bg-muted/50 rounded-lg border border-border/50">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mb-1">Transcurrido</span>
+        <span className="text-2xl font-mono font-bold text-foreground">
+          {formatTime(diff)}
         </span>
-        <span className="text-xs text-muted-foreground">(Simulado)</span>
       </div>
+
+      {requiredHours && (
+        <div className={cn(
+          "flex flex-col items-center justify-center p-3 rounded-lg border",
+          isCompleted ? "bg-green-50 border-green-200" : "bg-blue-50 border-blue-200"
+        )}>
+          <span className={cn("text-[10px] uppercase tracking-widest font-bold mb-1", isCompleted ? "text-green-700" : "text-blue-700")}>
+            {isCompleted ? "Completado" : "Tiempo Restante"}
+          </span>
+          <span className={cn("text-2xl font-mono font-bold", isCompleted ? "text-green-700" : "text-blue-700")}>
+            {isCompleted ? "00:00:00" : formatTime(remainingMs)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

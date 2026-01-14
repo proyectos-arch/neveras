@@ -41,6 +41,13 @@ service cloud.firestore {
       return isSignedIn() && request.resource.data.ownerId == request.auth.uid;
     }
 
+    /**
+     * Checks if the user is a super admin.
+     */
+    function isSuperAdmin() {
+      return request.auth.token.email == 's_delrio91@hotmail.com';
+    }
+
     // ----------------------------------------------------------------------
     // Collection Rules
     // ----------------------------------------------------------------------
@@ -51,7 +58,8 @@ service cloud.firestore {
      * @path /users/{userId}
      */
     match /users/{userId} {
-      allow read, write: if isSignedIn() && request.auth.uid == userId;
+      allow get, write: if isSignedIn() && request.auth.uid == userId;
+      allow list: if isSignedIn() && (request.auth.uid == userId || isSuperAdmin());
     }
 
     /**

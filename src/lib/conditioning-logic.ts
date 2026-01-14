@@ -43,6 +43,15 @@ export const getNextStep = (
     const isTimeUp = (requiredHours: number): boolean => {
         if (!lastEvent?.startTime) return false;
         const endTime = add(new Date(lastEvent.startTime), { hours: requiredHours });
+        console.log(`[Logic ${pack.serial}]`, {
+            model: pack.model,
+            currentChamber: lastEvent.chamberType,
+            startTime: lastEvent.startTime,
+            currentTime: currentTime.toISOString(),
+            endTimeOfPhase: endTime.toISOString(),
+            requiredHours,
+            isAfter: isAfter(currentTime, endTime)
+        });
         return isAfter(currentTime, endTime);
     };
 
@@ -75,11 +84,34 @@ export const getNextStep = (
                     const nextStep = packProfile.steps[nextStepIndex];
                     return { needsAction: true, message: `Mover de ${currentStep.chamber} a ${nextStep.chamber}${elapsedMessage}.` };
                 } else {
-                    return { needsAction: true, message: `Finalizar y marcar como "RTU"${elapsedMessage}.` };
+                    return { needsAction: false, message: `RTU (Ready To Use)${elapsedMessage}.`, isReady: true };
                 }
             }
         }
     }
 
     return { needsAction: false, message: `No requiere acción inmediata.` };
+};
+
+export const getCurrentStepDetails = (
+    pack: GelPack,
+    userProfile?: UserProfile | null
+): { hours: number, label: string } | null => {
+    const leakedTestHours = userProfile?.leakedTestHours ?? DEFAULT_LEAKED_TEST_HOURS;
+    const profiles = userProfile?.conditioningProfiles || DEFAULT_PROFILES;
+    const packProfile = profiles[pack.model];
+
+    if (pack.status === 'Leaked Test') {
+        return { hours: leakedTestHours, label: 'Leaked Test' };
+    }
+
+    const lastEvent = pack.lastConditioningEvent;
+    if (pack.status === 'Conditioning' && lastEvent && packProfile) {
+        const currentStep = packProfile.steps.find(step => step.chamber === lastEvent.chamberType);
+        if (currentStep) {
+            return { hours: currentStep.hours, label: currentStep.chamber };
+        }
+    }
+
+    return null;
 };

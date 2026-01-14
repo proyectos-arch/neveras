@@ -189,7 +189,7 @@ export function ConditioningTable({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  otherPacks.map((pack) => <PackRow key={pack.id} pack={pack} onViewQR={handleViewQR} />)
+                  otherPacks.map((pack) => <PackRow key={pack.id} pack={pack} onViewQR={handleViewQR} userProfile={userProfile} />)
                 )}
               </TableBody>
             </Table>
@@ -241,14 +241,14 @@ export function ConditioningTable({
   );
 }
 
-function PackRow({ pack, onViewQR }: { pack: GelPack, onViewQR: (pack: GelPack) => void }) {
+function PackRow({ pack, onViewQR, userProfile }: { pack: GelPack, onViewQR: (pack: GelPack) => void, userProfile: UserProfile | null }) {
   const [isLoading, setIsLoading] = React.useState(false);
   const firestore = useFirestore();
   const { toast } = useToast();
   const { currentTime } = useCurrentTime();
 
   const handleUpdateStatus = async (newStatus: 'Por activar' | 'Discarded') => {
-    if (!firestore) return;
+    if (!firestore || !pack.id) return;
     setIsLoading(true);
     try {
       const packRef = doc(firestore, 'gelPacks', pack.id);
@@ -265,6 +265,12 @@ function PackRow({ pack, onViewQR }: { pack: GelPack, onViewQR: (pack: GelPack) 
   }
 
   const renderLocationOrAction = () => {
+    const { isReady } = getNextStep(pack, currentTime, userProfile);
+
+    if (isReady) {
+      return <Badge variant="secondary" className="bg-green-100 text-green-800 hover:bg-green-200">RTU</Badge>;
+    }
+
     if (pack.status === 'Conditioning' && pack.lastConditioningEvent) {
       return <Badge variant="default">{pack.lastConditioningEvent.chamberType}°C</Badge>
     }
