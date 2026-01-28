@@ -13,7 +13,7 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Home, PackageCheck, Snowflake, Thermometer, LogOut, LayoutGrid, Settings, ShieldCheck } from 'lucide-react';
+import { Home, PackageCheck, Snowflake, Thermometer, LogOut, LayoutGrid, Settings, ShieldCheck, PackageOpen, CalendarClock } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useAuth, useUser } from '@/firebase';
@@ -120,6 +120,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   <Link href="/assembly">
                     <PackageCheck />
                     <span>Ensamblaje</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith('/abrir-cajas')}
+                  tooltip={{ children: 'Abrir Cajas' }}
+                >
+                  <Link href="/abrir-cajas">
+                    <PackageOpen />
+                    <span>Abrir Cajas</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname.startsWith('/reserva')}
+                  tooltip={{ children: 'Reserva' }}
+                >
+                  <Link href="/reserva">
+                    <CalendarClock />
+                    <span>Solicitar Reserva</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
